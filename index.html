@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Matrix Digital Rain</title>
+    <style>
+        /* Make the screen fully seamless and dark */
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrixCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas to full window boundaries
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Core characters (Mix of standard Matrix Katakana, English letters, and numbers)
+        const baseAlphabet = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        
+        // This array will hold the keystrokes you type in real time
+        let customInputQueue = [];
+
+        const fontSize = 16;
+        let columns = Math.floor(canvas.width / fontSize);
+
+        // Tracking vertical positions for every single rain column
+        let rainDrops = [];
+        for (let x = 0; x < columns; x++) {
+            rainDrops[x] = 1;
+        }
+
+        // Event listener capturing what you type
+        window.addEventListener('keydown', (e) => {
+            // Filter out system control keys (like Shift, Alt, Meta)
+            if (e.key.length === 1) {
+                customInputQueue.push(e.key.toUpperCase());
+            }
+        });
+
+        function drawMatrix() {
+            // Translucent black overlay yields the signature glowing trail fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Set text parameters 
+            ctx.font = fontSize + 'px monospace';
+
+            // Loop through columns
+            for (let i = 0; i < rainDrops.length; i++) {
+                let textToDraw = "";
+
+                // If you typed something, prioritize injecting your character!
+                if (customInputQueue.length > 0 && Math.random() > 0.7) {
+                    // Pick a random letter from your typed keys queue
+                    const randomIndex = Math.floor(Math.random() * customInputQueue.length);
+                    textToDraw = customInputQueue[randomIndex];
+                    
+                    // Give user-typed letters a distinct bright Cyan/White sheen
+                    ctx.fillStyle = '#e0ffff'; 
+                } else {
+                    // Otherwise, pull a standard background matrix symbol
+                    textToDraw = baseAlphabet.charAt(Math.floor(Math.random() * baseAlphabet.length));
+                    
+                    // Classic cyber green color scheme
+                    ctx.fillStyle = '#0F0'; 
+                }
+
+                // Render the character
+                const xCoordinate = i * fontSize;
+                const yCoordinate = rainDrops[i] * fontSize;
+                ctx.fillText(textToDraw, xCoordinate, yCoordinate);
+
+                // Reset drops back to the top once they hit bottom with added randomness
+                if (yCoordinate > canvas.height && Math.random() > 0.975) {
+                    rainDrops[i] = 0;
+                }
+
+                // Move downwards
+                rainDrops[i]++;
+            }
+
+            // Gradually flush old typed letters so the rain doesn't permanently match your typing history
+            if (customInputQueue.length > 50) {
+                customInputQueue.shift();
+            }
+        }
+
+        // Animate smoothly at roughly 33 frames per second 
+        setInterval(drawMatrix, 30);
+    </script>
+</body>
+</html>
